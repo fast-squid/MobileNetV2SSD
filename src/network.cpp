@@ -1,6 +1,7 @@
 #include "network.h"
+#include "convolution.cuh"
 
-void Network::Forward()
+Matrix Network::Forward(Matrix& input)
 {
 	for(int i=0; i<size;i++)
 	{
@@ -8,55 +9,59 @@ void Network::Forward()
 	}
 }
 
-void Layer::Forward()
-{
-	std::cout<< idx << std::endl;
-	for(int i=0; i<size;i++)
-	{
-		inners[i]->Forward();
-	}
-}
-
-void Sublayer::Forward()
-{
-	std::cout<< idx<< std::endl;
-	for(int i=0; i<size;i++)
-	{
-		inners[i]->Forward();
-	}
-}
-
-void Conv::Forward()
-{
-	Convolution_CPU();
-}
-
-Matrix Conv::Convolution_CPU(const Matrix& input)
+Matrix Network::Forward(Matrix&input, int start, int end)
 {	
+	std::cout << name <<std::endl;
+	for(int i=start; i<=end;i++)
+	{
+		inners[i]->Forward(input);
+	}
 }
 
-Matrix Conv::Convolution_GPU(const Matrix& input)
+Matrix Layer::Forward(Matrix& input)
 {
+	std::cout<< depth <<"layer : " << idx << std::endl;
+	for(int i=0; i<size;i++)
+	{
+		if(inners[i]->opcode == CONV)
+			((Conv*)inners[i])->Forward(input);
+		else if(inners[i]->opcode == BN)
+			((BatchNorm*)inners[i])->Forward(input);
+		else if(inners[i]->opcode == RELU)
+			((ReLU*)inners[i])->Forward(input);
+		else
+			inners[i]->Forward(input);
+	}
 }
 
-void BatchNorm::Forward()
+/*void Sublayer::Forward()
 {
-	BatchNormalization_CPU();	
-}
+	std::cout<< "sulayer" << idx<< std::endl;
+	for(int i=0; i<size;i++)
+	{
+		inners[i]->Forward();
+	}
+}*/
 
-Matrix BatchNormalization_CPU(const Matrix& input)
+Matrix Conv::Forward(Matrix& input)
 {
+	//Convolution_CPU();
+	printf("Conv forward\n");
+	return Convolution_GPU(input, *kernel, *bias, *param);
 }
 
-void ReLU::Forward()
+
+Matrix BatchNorm::Forward(Matrix& input)
 {
+	//BatchNormalization_CPU(input);	
 }
 
-Matrix ReLU::ReLU_CPU(Matrix& input)
+
+Matrix ReLU::Forward(Matrix& input)
 {
 
-	return 
 }
+
 
 void Network::PrintNetwork()
 {

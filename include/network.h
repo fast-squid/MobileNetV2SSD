@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
-#include "Mat.h"
+#include "matrix.h"
 #include "Debug.h"
 
 const int CONV = 0;
@@ -15,17 +15,17 @@ using namespace std;
 
 class Param
 {
-public:
-	int padding;
+public:	
 	int stride;
-	int group;
+	int padding;
+	int groups;
 	int dilation;
-	Param(int padding_ ,int stride_, int group_)
-		: padding(padding_), stride(stride_), group(group_)
+	Param(int stride_ ,int padding_, int groups_)
+		: stride(stride_), padding(padding_), groups(groups_)
 	{
 	}
 	Param(const int (&shape)[3])
-		: padding(shape[0]), stride(shape[1]), group(shape[2])
+		: stride(shape[0]), padding(shape[1]), groups(shape[2])
 	{
 	}
 };
@@ -35,6 +35,8 @@ class Layer
 public:
 	int idx;
 	int size;
+	int depth;
+	int opcode;
 	vector<Layer*> inners;
 	Layer()
 	{
@@ -48,30 +50,15 @@ public:
 		inners.push_back(l);
 	}
 	
-	virtual void Forward();
-	/*{
-		std::cout<< "Layer" <<std::endl;
-	}*/
-};
+	virtual Matrix Forward(){};
+	virtual Matrix Forward(Matrix& input);
 
-class Sublayer : public Layer
-{
-public:
-	Sublayer(int idx_ = -1, int size_ = -1)
-		: Layer(idx_, size_)
-	{
-	}
-	void Forward();
-	/*{
-		std::cout<< "Sublayer" <<std::endl;
-	}*/
 };
 
 
 class Conv : public Layer
 {
 public:
-	int opcode;
 	Matrix* kernel;
 	Matrix* bias;
 	Param* param;
@@ -79,18 +66,12 @@ public:
 		: kernel(kernel_), bias(bias_), param(param_)
 	{
 	}
-	void Forward()
-	{
-		std::cout<< "CONV" <<std::endl;
-	}
-	Matrix Convolution_CPU(Matrix& input);
-	Matrix Convolution_GPU(Matrix& input);
+	Matrix Forward(Matrix& input);
 };
 
 class BatchNorm : public Layer
 {
 public:
-	int opcode;
 	Matrix* mov_mean;
 	Matrix* mov_var;
 	Matrix* beta;
@@ -99,28 +80,17 @@ public:
 		: mov_mean(mov_mean_), mov_var(mov_var_), beta(beta_), gamma(gamma_)
 	{
 	}
-	void Forward()
-	{
-		std::cout<< "BN" <<std::endl;
-	}
-	Matrix BatchNormalization_CPU(Matrix& input);
-	Matrix BatchNormalization_GPU(Matrix& input);
+	Matrix Forward(Matrix& input);
 };
 
 class ReLU : public Layer
 {
 public:
-	int opcode;
 	int inplace;
 	ReLU()
 	{
 	}
-	void Forward()
-	{
-		std::cout<< "RELU" <<std::endl;
-	}
-	Matrix ReLU_CPU(Matrix& input);
-	Matrix ReLU_GPU(Matrix& input);
+	Matrix Forward(Matrix& input);
 };
 
 class Network : public Layer
@@ -134,7 +104,8 @@ public:
 	{
 		
 	}
-	void Forward();
+	Matrix Forward(Matrix& input);
+	Matrix Forward(Matrix& input, int start, int end);
 	void PrintNetwork();
 };
 
